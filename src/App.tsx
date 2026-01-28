@@ -1,7 +1,73 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+interface Review {
+  id: number
+  name: string
+  rating: number
+  content: string
+  date: string
+}
 
 function App() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [reviewForm, setReviewForm] = useState({
+    name: '',
+    rating: 5,
+    content: ''
+  })
+
+  // localStorage에서 리뷰 불러오기
+  useEffect(() => {
+    const savedReviews = localStorage.getItem('applehome-reviews')
+    if (savedReviews) {
+      setReviews(JSON.parse(savedReviews))
+    } else {
+      // 초기 샘플 리뷰
+      const initialReviews: Review[] = [
+        {
+          id: 1,
+          name: '김**',
+          rating: 5,
+          content: '휴일에도 안심하고 맡길 수 있어서 정말 감사합니다. 선생님들이 너무 친절하세요!',
+          date: '2025-01-15'
+        },
+        {
+          id: 2,
+          name: '이**',
+          rating: 5,
+          content: '야간 근무할 때 큰 도움이 됩니다. 아이도 잘 적응하고 좋아해요.',
+          date: '2025-01-10'
+        }
+      ]
+      setReviews(initialReviews)
+      localStorage.setItem('applehome-reviews', JSON.stringify(initialReviews))
+    }
+  }, [])
+
+  const handleSubmitReview = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!reviewForm.name.trim() || !reviewForm.content.trim()) return
+
+    const newReview: Review = {
+      id: Date.now(),
+      name: reviewForm.name,
+      rating: reviewForm.rating,
+      content: reviewForm.content,
+      date: new Date().toISOString().split('T')[0]
+    }
+
+    const updatedReviews = [newReview, ...reviews]
+    setReviews(updatedReviews)
+    localStorage.setItem('applehome-reviews', JSON.stringify(updatedReviews))
+    setReviewForm({ name: '', rating: 5, content: '' })
+    setShowReviewModal(false)
+  }
+
+  const averageRating = reviews.length > 0
+    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+    : '0.0'
 
   const galleryImages = [
     {
@@ -55,6 +121,80 @@ function App() {
             alt="확대 이미지"
             className="max-w-full max-h-[80vh] rounded-2xl object-contain"
           />
+        </div>
+      )}
+
+      {/* Review Modal */}
+      {showReviewModal && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setShowReviewModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-[#2c261c] rounded-2xl w-full max-w-sm p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold dark:text-white">리뷰 작성</h3>
+              <button
+                className="p-1 text-gray-400 hover:text-gray-600"
+                onClick={() => setShowReviewModal(false)}
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <form onSubmit={handleSubmitReview} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  이름
+                </label>
+                <input
+                  type="text"
+                  value={reviewForm.name}
+                  onChange={(e) => setReviewForm({ ...reviewForm, name: e.target.value })}
+                  placeholder="홍길동"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-[#1a160f] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  별점
+                </label>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                      className="text-2xl transition-transform hover:scale-110"
+                    >
+                      {star <= reviewForm.rating ? '⭐' : '☆'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  후기 내용
+                </label>
+                <textarea
+                  value={reviewForm.content}
+                  onChange={(e) => setReviewForm({ ...reviewForm, content: e.target.value })}
+                  placeholder="어린이집 이용 경험을 공유해주세요..."
+                  rows={4}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-[#1a160f] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full py-3 rounded-xl bg-primary text-white font-bold text-sm tracking-wide transition-all hover:bg-primary-light active:scale-[0.98]"
+              >
+                리뷰 등록하기
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
@@ -121,20 +261,18 @@ function App() {
               <p className="text-[#181611]/60 dark:text-white/60 text-[11px] mt-0.5">{galleryImages.length}장의 사진</p>
             </div>
           </a>
-          <a
-            href="https://icare.suseong.kr"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col gap-3 rounded-2xl border border-[#e6e2db] dark:border-[#3d382e] bg-white dark:bg-[#2c261c] p-4 transition-all hover:shadow-md"
+          <button
+            onClick={() => setShowReviewModal(true)}
+            className="flex flex-col gap-3 rounded-2xl border border-[#e6e2db] dark:border-[#3d382e] bg-white dark:bg-[#2c261c] p-4 transition-all hover:shadow-md text-left"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-500">
-              <span className="material-symbols-outlined">event_available</span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-50 text-yellow-500">
+              <span className="material-symbols-outlined">rate_review</span>
             </div>
             <div>
-              <h4 className="text-[#181611] dark:text-white text-sm font-bold">예약하기</h4>
-              <p className="text-[#181611]/60 dark:text-white/60 text-[11px] mt-0.5">수성올인원</p>
+              <h4 className="text-[#181611] dark:text-white text-sm font-bold">리뷰 작성</h4>
+              <p className="text-[#181611]/60 dark:text-white/60 text-[11px] mt-0.5">학부모 후기</p>
             </div>
-          </a>
+          </button>
           <a
             href="tel:053-745-0418"
             className="flex flex-col gap-3 rounded-2xl border border-[#e6e2db] dark:border-[#3d382e] bg-white dark:bg-[#2c261c] p-4 transition-all hover:shadow-md"
@@ -204,6 +342,59 @@ function App() {
         <button className="w-full mt-4 py-3 rounded-xl border border-[#e6e2db] dark:border-[#3d382e] text-[#181611] dark:text-white font-semibold text-sm tracking-wide transition-all hover:bg-[#f5f5f5] dark:hover:bg-[#2c261c] active:scale-[0.98]">
           더 많은 사진 보기
         </button>
+      </div>
+
+      {/* Reviews Section */}
+      <div id="reviews" className="px-4 pb-8">
+        <div className="flex items-center justify-between mb-4 px-1">
+          <div className="flex items-center gap-2">
+            <h3 className="text-[#181611] dark:text-white text-lg font-bold font-display">학부모 리뷰</h3>
+            <div className="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full">
+              <span className="text-yellow-500 text-sm">⭐</span>
+              <span className="text-sm font-bold text-yellow-600">{averageRating}</span>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowReviewModal(true)}
+            className="text-primary text-xs font-semibold flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-sm">edit</span>
+            작성하기
+          </button>
+        </div>
+        <div className="space-y-3">
+          {reviews.slice(0, 5).map((review) => (
+            <div
+              key={review.id}
+              className="bg-white dark:bg-[#2c261c] rounded-xl p-4 border border-[#e6e2db] dark:border-[#3d382e]"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-primary text-sm font-bold">{review.name.charAt(0)}</span>
+                  </div>
+                  <span className="text-sm font-semibold dark:text-white">{review.name}</span>
+                </div>
+                <span className="text-[10px] text-gray-400">{review.date}</span>
+              </div>
+              <div className="flex gap-0.5 mb-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span key={star} className="text-xs">
+                    {star <= review.rating ? '⭐' : '☆'}
+                  </span>
+                ))}
+              </div>
+              <p className="text-sm text-[#181611]/80 dark:text-white/80 leading-relaxed">
+                {review.content}
+              </p>
+            </div>
+          ))}
+        </div>
+        {reviews.length > 5 && (
+          <button className="w-full mt-4 py-3 rounded-xl border border-[#e6e2db] dark:border-[#3d382e] text-[#181611] dark:text-white font-semibold text-sm tracking-wide transition-all hover:bg-[#f5f5f5] dark:hover:bg-[#2c261c] active:scale-[0.98]">
+            리뷰 더보기 ({reviews.length - 5}개)
+          </button>
+        )}
       </div>
 
       {/* Programs Section */}
@@ -335,14 +526,12 @@ function App() {
           <span className="material-symbols-outlined">photo_library</span>
           <span className="text-[10px] font-medium">갤러리</span>
         </a>
-        <a
-          href="https://icare.suseong.kr"
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={() => setShowReviewModal(true)}
           className="-mt-12 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-xl shadow-primary/30 ring-4 ring-white dark:ring-background-dark"
         >
-          <span className="material-symbols-outlined !text-[32px]">edit_calendar</span>
-        </a>
+          <span className="material-symbols-outlined !text-[32px]">rate_review</span>
+        </button>
         <a href="#hours" className="flex flex-col items-center gap-1 text-[#181611]/40 dark:text-white/40 hover:text-primary transition-colors">
           <span className="material-symbols-outlined">schedule</span>
           <span className="text-[10px] font-medium">운영시간</span>
