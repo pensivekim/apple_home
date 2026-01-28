@@ -339,9 +339,14 @@ function App() {
             </div>
           ))}
         </div>
-        <button className="w-full mt-4 py-3 rounded-xl border border-[#e6e2db] dark:border-[#3d382e] text-[#181611] dark:text-white font-semibold text-sm tracking-wide transition-all hover:bg-[#f5f5f5] dark:hover:bg-[#2c261c] active:scale-[0.98]">
-          더 많은 사진 보기
-        </button>
+        <a
+          href="https://blog.naver.com/young690713"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full mt-4 py-3 rounded-xl border border-[#e6e2db] dark:border-[#3d382e] text-[#181611] dark:text-white font-semibold text-sm tracking-wide transition-all hover:bg-[#f5f5f5] dark:hover:bg-[#2c261c] active:scale-[0.98] text-center"
+        >
+          어린이집 입장
+        </a>
       </div>
 
       {/* Reviews Section */}
